@@ -16,9 +16,8 @@ var DB *sql.DB
 func Server() {
 	router := gin.Default()
 
-	dbConnStr := "postgres://username:password@localhost/dbname?sslmode=disable"
+	dbConnStr := "postgres://{YOUR_NAME}}:{YOUR_PASSWORD}@localhost:5432/extended_todo?sslmode=disable"
 
-	// Открытие соединения с базой данных
 	var err error
 	DB, err = sql.Open("postgres", dbConnStr)
 	if err != nil {
@@ -26,7 +25,6 @@ func Server() {
 	}
 	defer DB.Close()
 
-	// Проверка соединения с базой данных
 	err = DB.Ping()
 	if err != nil {
 		log.Fatal(err)
@@ -34,7 +32,6 @@ func Server() {
 
 	router.POST("/login", login)
 
-	//User routes
 	userGroup := router.Group("/users")
 	userGroup.Use(Authenticate)
 	{
@@ -49,7 +46,6 @@ func Server() {
 		cardGroup.GET("/:id", card_controller.GetOneCard)
 	}
 
-	//Tasks routes
 	//taskGroup := router.Group("/tasks")
 	//taskGroup.Use(Authenticate)
 	//{
@@ -69,7 +65,7 @@ type Claims struct {
 }
 
 func CreateToken(username string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour) // Время истечения токена - 24 часа
+	expirationTime := time.Now().Add(24 * time.Hour)
 
 	claims := &Claims{
 		Username: username,
@@ -79,7 +75,7 @@ func CreateToken(username string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte("secret")) // Здесь "secret" - ваш секретный ключ для подписи токена
+	tokenString, err := token.SignedString([]byte("secret"))
 
 	if err != nil {
 		return "", err
@@ -97,10 +93,10 @@ func Authenticate(c *gin.Context) {
 		return
 	}
 
-	tokenString = tokenString[7:] // Удаление префикса "Bearer " из строки токена
+	tokenString = tokenString[7:]
 
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil // Здесь также используется ваш секретный ключ
+		return []byte("secret"), nil
 	})
 
 	if err != nil || !token.Valid {
@@ -124,7 +120,6 @@ func login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	// Проверка логина и пароля (здесь используется простая проверка)
 	if username != "admin" || password != "admin" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
