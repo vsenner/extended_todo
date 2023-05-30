@@ -1,15 +1,12 @@
 package card_service
 
 import (
-	"database/sql"
+	//"database/sql"
+	db "extended_todo/routing"
 	"fmt"
 
 	"github.com/pkg/errors"
 )
-
-type CardService struct {
-	db *sql.DB
-}
 
 type Card struct {
 	ID      int    `json:"id"`
@@ -17,14 +14,8 @@ type Card struct {
 	AdminID int    `json:"admin_id"`
 }
 
-func NewCardService(db *sql.DB) *CardService {
-	return &CardService{
-		db: db,
-	}
-}
-
-func (cs *CardService) GetAll(userID int) ([]Card, error) {
-	rows, err := cs.db.Query(fmt.Sprintf("SELECT * FROM card WHERE admin_id=%d", userID))
+func GetAll(userID int) ([]Card, error) {
+	rows, err := db.DB.Query(fmt.Sprintf("SELECT * FROM card WHERE admin_id=%d", userID))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute query")
 	}
@@ -47,35 +38,32 @@ func (cs *CardService) GetAll(userID int) ([]Card, error) {
 	return cards, nil
 }
 
-func (cs *CardService) GetOne(cardID int) (*Card, error) {
-	row := cs.db.QueryRow(fmt.Sprintf("SELECT * FROM card WHERE id=%d", cardID))
+func GetOne(cardID int) Card {
 
-	var card Card
-	err := row.Scan(&card.ID, &card.Name, &card.AdminID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("card not found")
-		}
-		return nil, errors.Wrap(err, "failed to scan row")
+	c := Card{}
+
+	if err := db.DB.QueryRow("SELECT * FROM card WHERE id=$1", cardID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
 
-	return &card, nil
+	fmt.Print("GOOD")
+
+	return c
 }
 
-func (cs *CardService) Add(userID int, name string) (*Card, error) {
-	row := cs.db.QueryRow(fmt.Sprintf("INSERT INTO card (name, admin_id) VALUES ('%s', %d) RETURNING *", name, userID))
+func Add(userID int, name string) Card {
 
-	var card Card
-	err := row.Scan(&card.ID, &card.Name, &card.AdminID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	c := Card{}
+
+	if err := db.DB.QueryRow("INSERT INTO card (name, admin_id) VALUES ('$1', $2) RETURNING *", name, userID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
 
-	return &card, nil
+	fmt.Print("GOOD")
+
+	return c
 }
 
-func (cs *CardService) Remove(cardID int) (bool, error) {
-	result, err := cs.db.Exec(fmt.Sprintf("DELETE FROM card WHERE id=%d", cardID))
+func Remove(cardID int) (bool, error) {
+	result, err := db.DB.Exec("DELETE FROM card WHERE id=$1", cardID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to execute query")
 	}
@@ -92,14 +80,14 @@ func (cs *CardService) Remove(cardID int) (bool, error) {
 	return true, nil
 }
 
-func (cs *CardService) Rename(cardID int, name string) (*Card, error) {
-	row := cs.db.QueryRow(fmt.Sprintf("UPDATE card SET name='%s' WHERE id=%d RETURNING *", name, cardID))
+func Rename(cardID int, name string) Card {
 
-	var card Card
-	err := row.Scan(&card.ID, &card.Name, &card.AdminID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	c := Card{}
+
+	if err := db.DB.QueryRow("UPDATE card SET name='$1' WHERE id=$2 RETURNING *", name, cardID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
 
-	return &card, nil
+	fmt.Print("GOOD")
+
+	return c
 }

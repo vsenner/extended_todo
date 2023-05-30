@@ -1,63 +1,62 @@
 package card_controller
 
 import (
+	card_service "extended_todo/service/card"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
+
+	//"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 )
 
-type card struct {
-	ID       int    `json:"id"`
+type CardBody struct {
 	Name     string `json:"name"`
 	Admin_ID int    `json:"admin_id"`
 }
 
-var cards = []card{
-	{ID: 1, Name: "My day", Admin_ID: 1},
-}
-
 func GetAllCards(c *gin.Context) {
+	adminIdStr := c.Param("adminID")
+	adminId, _ := strconv.Atoi(adminIdStr)
+	cards, err := card_service.GetAll(adminId)
+
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Cards not found"})
+		return
+	}
+
 	c.IndentedJSON(http.StatusOK, cards)
 }
 
-func GetCardByID(id int) (*card, error) {
-	for i, c := range cards {
-		if c.ID == id {
-			return &cards[i], nil
-		}
-	}
-
-	return nil, errors.New("Card not found.")
-}
-
 func CreateCard(c *gin.Context) {
-	var newCard card
+	var newCard CardBody
 
 	if err := c.BindJSON(&newCard); err != nil {
 		return
 	}
 
-	cards = append(cards, newCard)
-	c.IndentedJSON(http.StatusCreated, newCard)
+	card := card_service.Add(newCard.Admin_ID, newCard.Name)
+
+	fmt.Print(card)
+
+	c.JSON(http.StatusOK, gin.H{"card": card})
+
 }
 
 func GetOneCard(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	card, err := GetCardByID(id)
+	card := card_service.GetOne(id)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Card not found"})
-		return
-	}
+	fmt.Print(card)
 
-	c.IndentedJSON(http.StatusOK, card)
+	c.JSON(http.StatusOK, gin.H{"card": card})
 }
 
 func RenameCard(c *gin.Context) {
-	var newCard card
+	var newCard CardBody
 
 	if err := c.BindJSON(&newCard); err != nil {
 		return
@@ -66,13 +65,23 @@ func RenameCard(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	card, err := GetCardByID(id)
+	card := card_service.Rename(id, newCard.Name)
+
+	fmt.Print(card)
+
+	c.JSON(http.StatusOK, gin.H{"card": card})
+}
+
+func RemoveCard(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
+
+	result, err := card_service.Remove(id)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Card not found"})
 		return
 	}
 
-	card.Name = newCard.Name
-	c.IndentedJSON(http.StatusOK, card)
+	c.IndentedJSON(http.StatusOK, result)
 }

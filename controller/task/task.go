@@ -1,14 +1,17 @@
 package task_controller
 
 import (
+	task_service "extended_todo/service/task"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
+
+	//"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 )
 
-type task struct {
-	ID          int    `json:"id"`
+type TaskBody struct {
 	Card_ID     int    `json:"card_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -18,52 +21,47 @@ type task struct {
 	Completed   bool   `json:"completed"`
 }
 
-var tasks = []task{
-	{ID: 1, Card_ID: 1, Title: "task1", Description: "task1", Start: "", Percent: 0, Deadline: "", Completed: false},
-}
-
 func GetAllTasks(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, tasks)
-}
+	cardIdStr := c.Param("cardID")
+	cardId, _ := strconv.Atoi(cardIdStr)
+	tasks, err := task_service.GetAll(cardId)
 
-func GetTaskByID(id int) (*task, error) {
-	for i, t := range tasks {
-		if t.ID == id {
-			return &tasks[i], nil
-		}
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Tasks not found"})
+		return
 	}
 
-	return nil, errors.New("Task not found.")
+	c.IndentedJSON(http.StatusOK, tasks)
 }
 
 func GetOneTask(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.GetOne(id)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func CreateTask(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
 	}
 
-	tasks = append(tasks, newTask)
-	c.IndentedJSON(http.StatusCreated, newTask)
+	task := task_service.Add(newTask.Card_ID, newTask.Title, newTask.Description, newTask.Start, newTask.Deadline, newTask.Percent)
+
+	fmt.Print(task)
+
+	c.JSON(http.StatusOK, gin.H{"task": task})
 
 }
 
 func ChangeTaskCard(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -72,19 +70,15 @@ func ChangeTaskCard(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeCard(id, newTask.Card_ID)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Card_ID = newTask.Card_ID
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskTitle(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -93,19 +87,15 @@ func ChangeTaskTitle(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeTitle(id, newTask.Title)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Title = newTask.Title
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskDescription(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -114,19 +104,15 @@ func ChangeTaskDescription(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeDescription(id, newTask.Description)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Description = newTask.Description
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskStart(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -135,19 +121,15 @@ func ChangeTaskStart(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeStart(id, newTask.Start)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Start = newTask.Start
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskPercent(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -156,19 +138,15 @@ func ChangeTaskPercent(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangePercent(id, newTask.Percent)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Percent = newTask.Percent
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskDeadline(c *gin.Context) {
-	var newTask task
+	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
 		return
@@ -177,28 +155,40 @@ func ChangeTaskDeadline(c *gin.Context) {
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeDeadline(id, newTask.Deadline)
 
-	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
-		return
-	}
+	fmt.Print(task)
 
-	task.Deadline = newTask.Deadline
-	c.IndentedJSON(http.StatusOK, task)
+	c.JSON(http.StatusOK, gin.H{"task": task})
 }
 
 func ChangeTaskCompleted(c *gin.Context) {
+	var newTask TaskBody
+
+	if err := c.BindJSON(&newTask); err != nil {
+		return
+	}
+
 	idStr := c.Param("id")
 	id, _ := strconv.Atoi(idStr)
 
-	task, err := GetTaskByID(id)
+	task := task_service.ChangeComplete(id, newTask.Completed)
+
+	fmt.Print(task)
+
+	c.JSON(http.StatusOK, gin.H{"task": task})
+}
+
+func RemoveTask(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
+
+	result, err := task_service.Remove(id)
 
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Task not found"})
 		return
 	}
 
-	task.Completed = !task.Completed
-	c.IndentedJSON(http.StatusOK, task)
+	c.IndentedJSON(http.StatusOK, result)
 }

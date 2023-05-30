@@ -1,14 +1,12 @@
-package service
+package task_service
 
 import (
-	"database/sql"
+	//"database/sql"
+	db "extended_todo/routing"
 	"fmt"
+
 	"github.com/pkg/errors"
 )
-
-type TaskService struct {
-	db *sql.DB
-}
 
 type Task struct {
 	ID          int    `json:"id"`
@@ -21,14 +19,8 @@ type Task struct {
 	Completed   bool   `json:"completed"`
 }
 
-func NewTaskService(db *sql.DB) *TaskService {
-	return &TaskService{
-		db: db,
-	}
-}
-
-func (ts *TaskService) GetAll(cardID int) ([]Task, error) {
-	rows, err := ts.db.Query(fmt.Sprintf("SELECT * FROM task WHERE card_id=%d", cardID))
+func GetAll(cardID int) ([]Task, error) {
+	rows, err := db.DB.Query(fmt.Sprintf("SELECT * FROM task WHERE card_id=%d", cardID))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute query")
 	}
@@ -51,22 +43,20 @@ func (ts *TaskService) GetAll(cardID int) ([]Task, error) {
 	return tasks, nil
 }
 
-func (ts *TaskService) GetOne(taskID int) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("SELECT * FROM task WHERE id=%d", taskID))
+func GetOne(taskID int) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("task not found")
-		}
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("SELECT * FROM task WHERE id=$1", taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
+
 }
 
-func (ts *TaskService) Add(cardID int, title string, description string, start string, deadline string, percent int) (*Task, error) {
+func Add(cardID int, title string, description string, start string, deadline string, percent int) Task {
 	var query string
 	if description != "" && start != "" && deadline != "" {
 		query = fmt.Sprintf(`INSERT INTO task (card_id, title, description, start, deadline, percent, completed)
@@ -94,19 +84,18 @@ func (ts *TaskService) Add(cardID int, title string, description string, start s
 			VALUES (%d, '%s', %d, false) RETURNING *`, cardID, title, percent)
 	}
 
-	row := ts.db.QueryRow(query)
+	t := Task{}
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	if err := db.DB.QueryRow(query).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) Remove(taskID int) (bool, error) {
-	result, err := ts.db.Exec(fmt.Sprintf("DELETE FROM task WHERE id=%d", taskID))
+func Remove(taskID int) (bool, error) {
+	result, err := db.DB.Exec("DELETE FROM task WHERE id=$1", taskID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to execute query")
 	}
@@ -123,86 +112,86 @@ func (ts *TaskService) Remove(taskID int) (bool, error) {
 	return true, nil
 }
 
-func (ts *TaskService) ChangeTitle(taskID int, title string) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET title='%s' WHERE id=%d RETURNING *", title, taskID))
+func ChangeTitle(taskID int, title string) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET title='$1' WHERE id=$2 RETURNING *", title, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangeDescription(taskID int, description string) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET description='%s' WHERE id=%d RETURNING *", description, taskID))
+func ChangeDescription(taskID int, description string) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET description='$1' WHERE id=$2 RETURNING *", description, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangeStart(taskID int, start string) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET start='%s' WHERE id=%d RETURNING *", start, taskID))
+func ChangeStart(taskID int, start string) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET start='$1' WHERE id=$2 RETURNING *", start, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangeDeadline(taskID int, deadline string) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET deadline='%s' WHERE id=%d RETURNING *", deadline, taskID))
+func ChangeDeadline(taskID int, deadline string) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET deadline='$1' WHERE id=$2 RETURNING *", deadline, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangeComplete(taskID int, status bool) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET completed=%v WHERE id=%d RETURNING *", status, taskID))
+func ChangeComplete(taskID int, status bool) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET completed=$1 WHERE id=$2 RETURNING *", status, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangeCard(taskID int, cardID int) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET card_id=%d WHERE id=%d RETURNING *", cardID, taskID))
+func ChangeCard(taskID int, cardID int) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET card_id=$1 WHERE id=$2 RETURNING *", cardID, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
 
-func (ts *TaskService) ChangePercent(taskID int, percent int) (*Task, error) {
-	row := ts.db.QueryRow(fmt.Sprintf("UPDATE task SET percent=%d WHERE id=%d RETURNING *", percent, taskID))
+func ChangePercent(taskID int, percent int) Task {
 
-	var task Task
-	err := row.Scan(&task.ID, &task.CardID, &task.Title, &task.Description, &task.Start, &task.Percent, &task.Deadline, &task.Completed)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan row")
+	t := Task{}
+
+	if err := db.DB.QueryRow("UPDATE task SET percent=$1 WHERE id=$2 RETURNING *", percent, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
-	return &task, nil
+	fmt.Print("GOOD")
+
+	return t
 }
