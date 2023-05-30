@@ -1,19 +1,12 @@
 package token_service
 
 import (
-	"database/sql"
+	db "extended_todo/routing"
 	"fmt"
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
+	"time"
 )
-
-type TokenService struct {
-	refreshTokenSecret string
-	accessTokenSecret  string
-	db                 *sql.DB
-}
 
 type UserRes struct {
 	ID    int    `json:"id"`
@@ -21,15 +14,7 @@ type UserRes struct {
 	Email string `json:"email"`
 }
 
-func NewTokenService(refreshTokenSecret string, accessTokenSecret string, db *sql.DB) *TokenService {
-	return &TokenService{
-		refreshTokenSecret: refreshTokenSecret,
-		accessTokenSecret:  accessTokenSecret,
-		db:                 db,
-	}
-}
-
-func (ts *TokenService) GenerateTokens(payload *UserRes) (string, string, error) {
+func GenerateTokens(payload *UserRes) (string, string, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
 	refreshClaims["id"] = payload.ID
@@ -37,7 +22,7 @@ func (ts *TokenService) GenerateTokens(payload *UserRes) (string, string, error)
 	refreshClaims["email"] = payload.Email
 	refreshClaims["exp"] = time.Now().Add(time.Hour * 24 * 30).Unix()
 
-	refreshTokenString, err := refreshToken.SignedString([]byte(ts.refreshTokenSecret))
+	refreshTokenString, err := refreshToken.SignedString([]byte(payload.Name))
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to generate refresh token")
 	}
@@ -49,7 +34,7 @@ func (ts *TokenService) GenerateTokens(payload *UserRes) (string, string, error)
 	accessClaims["email"] = payload.Email
 	accessClaims["exp"] = time.Now().Add(time.Minute * 30).Unix()
 
-	accessTokenString, err := accessToken.SignedString([]byte(ts.accessTokenSecret))
+	accessTokenString, err := accessToken.SignedString([]byte(payload.Name))
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to generate access token")
 	}
@@ -57,8 +42,8 @@ func (ts *TokenService) GenerateTokens(payload *UserRes) (string, string, error)
 	return accessTokenString, refreshTokenString, nil
 }
 
-func (ts *TokenService) SaveToken(refreshToken string, userID int) error {
-	row := ts.db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM token WHERE user_id = %d", userID))
+func SaveToken(refreshToken string, userID int) error {
+	row := db.DB.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM token WHERE user_id = %d", userID))
 
 	var count int
 	err := row.Scan(&count)
@@ -67,12 +52,12 @@ func (ts *TokenService) SaveToken(refreshToken string, userID int) error {
 	}
 
 	if count == 1 {
-		_, err = ts.db.Exec(fmt.Sprintf("UPDATE token SET refresh_token = '%s' WHERE user_id = %d", refreshToken, userID))
+		_, err = db.DB.QueryRow(fmt.Sprintf("UPDATE token SET refresh_token = '%s' WHERE user_id = %d", refreshToken, userID))
 		if err != nil {
 			return errors.Wrap(err, "failed to update token")
 		}
 	} else {
-		_, err = ts.db.Exec(fmt.Sprintf("INSERT INTO token (refresh_token, user_id) VALUES ('%s', %d)", refreshToken, userID))
+		_, err = db.DB.Exec(fmt.Sprintf("INSERT INTO token (refresh_token, user_id) VALUES ('%s', %d)", refreshToken, userID))
 		if err != nil {
 			return errors.Wrap(err, "failed to insert token")
 		}
@@ -81,7 +66,7 @@ func (ts *TokenService) SaveToken(refreshToken string, userID int) error {
 	return nil
 }
 
-func (ts *TokenService) ValidateAccessToken(accessToken string) (*UserRes, error) {
+func ValidateAccessToken(accessToken string) (*UserRes, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 		return []byte(ts.accessTokenSecret), nil
 	})
@@ -96,7 +81,7 @@ func (ts *TokenService) ValidateAccessToken(accessToken string) (*UserRes, error
 
 	userID, ok := claims["id"].(float64)
 	if !ok {
-		return nil, errors.New("invalid user-authorized-authorized ID in access token")
+		return nil, errors.New("invalid user-unauthorized-authorized ID in access token")
 	}
 
 	name, ok := claims["name"].(string)
@@ -116,7 +101,7 @@ func (ts *TokenService) ValidateAccessToken(accessToken string) (*UserRes, error
 	}, nil
 }
 
-func (ts *TokenService) ValidateRefreshToken(refreshToken string) (*UserRes, error) {
+func ValidateRefreshToken(refreshToken string) (*UserRes, error) {
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		return []byte(ts.refreshTokenSecret), nil
 	})
@@ -131,7 +116,7 @@ func (ts *TokenService) ValidateRefreshToken(refreshToken string) (*UserRes, err
 
 	userID, ok := claims["id"].(float64)
 	if !ok {
-		return nil, errors.New("invalid user-authorized-authorized ID in refresh token")
+		return nil, errors.New("invalid user-unauthorized-authorized ID in refresh token")
 	}
 
 	name, ok := claims["name"].(string)

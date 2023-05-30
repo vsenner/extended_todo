@@ -1,7 +1,9 @@
 package user_controller
 
 import (
+	user_service "extended_todo/service/user-unauthorized"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 )
@@ -19,7 +21,15 @@ var users = []user{
 
 //User's funcs
 
-func GetAllUsers(c *gin.Context) {
+func Registration(c *gin.Context) {
+	var newUser user
+
+	if err := c.BindJSON(&newUser); err != nil {
+		return
+	}
+
+	user_service.Registration()
+
 	c.IndentedJSON(http.StatusOK, users)
 }
 

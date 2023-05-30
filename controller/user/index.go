@@ -18,7 +18,7 @@ func NewUserController(userService service.UserService) *UserController {
 	}
 }
 
-func (uc *UserController) Registration(c *gin.Context) {
+func Registration(c *gin.Context) {
 	var userReq service.UserReq
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -41,7 +41,7 @@ func (uc *UserController) Registration(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (uc *UserController) Login(c *gin.Context) {
+func Login(c *gin.Context) {
 	var userReq service.UserReq
 	if err := c.ShouldBindJSON(&userReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -58,7 +58,7 @@ func (uc *UserController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func (uc *UserController) Refresh(c *gin.Context) {
+func Refresh(c *gin.Context) {
 	refreshToken, err := c.Cookie("refreshToken")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})

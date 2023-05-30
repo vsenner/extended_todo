@@ -1,41 +1,24 @@
 package server
 
 import (
-	"database/sql"
 	card_controller "extended_todo/controller/card"
 	user_controller "extended_todo/controller/user-authorized"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"log"
+	_ "github.com/lib/pq"
 	"net/http"
 	"time"
 )
 
-var DB *sql.DB
-
 func Server() {
 	router := gin.Default()
-
-	dbConnStr := "postgres://{YOUR_NAME}}:{YOUR_PASSWORD}@localhost:5432/extended_todo?sslmode=disable"
-
-	var err error
-	DB, err = sql.Open("postgres", dbConnStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer DB.Close()
-
-	err = DB.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	router.POST("/login", login)
 
 	userGroup := router.Group("/users")
 	userGroup.Use(Authenticate)
 	{
-		userGroup.GET("", user_controller.GetAllUsers)
+		userGroup.GET("", user_controller.Registration)
 		userGroup.GET("/:id", user_controller.GetOneUser)
 	}
 
@@ -53,10 +36,7 @@ func Server() {
 	//	taskGroup.GET("/:id", task.getOneTask)
 	//}
 
-	err = router.Run("localhost:8080")
-	if err != nil {
-		return
-	}
+	router.Run("localhost:8080")
 }
 
 type Claims struct {
@@ -116,16 +96,26 @@ func Authenticate(c *gin.Context) {
 	c.Next()
 }
 
-func login(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+type UserLogin struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
 
-	if username != "admin" || password != "admin" {
+func login(c *gin.Context) {
+
+	var user UserLogin
+
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
+		return
+	}
+
+	if user.Username != "admin" || user.Password != "admin" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	tokenString, err := CreateToken(username)
+	tokenString, err := CreateToken(user.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

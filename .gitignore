@@ -13,3 +13,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+/.idea/.gitignore
+/.idea/dataSources.xml
+/.idea/extended_todo.iml
+/.idea/modules.xml
+/.idea/sqldialects.xml
+/.idea/vcs.xml

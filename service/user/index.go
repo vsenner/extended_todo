@@ -1,17 +1,11 @@
 package service
 
 import (
-	"database/sql"
+	db "extended_todo/routing"
 	"fmt"
-
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/bcrypt"
 )
-
-type UserAuthorizedService struct {
-	db *sql.DB
-}
 
 type UserRes struct {
 	ID       int    `json:"id"`
@@ -20,14 +14,8 @@ type UserRes struct {
 	Password string `json:"password"`
 }
 
-func NewUserAuthorizedService(db *sql.DB) *UserAuthorizedService {
-	return &UserAuthorizedService{
-		db: db,
-	}
-}
-
-func (uas *UserAuthorizedService) ChangeName(userID int, name string) (*UserRes, error) {
-	row := uas.db.QueryRow(fmt.Sprintf("UPDATE users SET name='%s' WHERE id=%d RETURNING *", name, userID))
+func ChangeName(userID int, name string) (*UserRes, error) {
+	row := db.DB.QueryRow(fmt.Sprintf("UPDATE users SET name='%s' WHERE id=%d RETURNING *", name, userID))
 
 	var user UserRes
 	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)
@@ -38,13 +26,13 @@ func (uas *UserAuthorizedService) ChangeName(userID int, name string) (*UserRes,
 	return &user, nil
 }
 
-func (uas *UserAuthorizedService) ChangePassword(userID int, password string) (*UserRes, error) {
+func ChangePassword(userID int, password string) (*UserRes, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate hashed password")
 	}
 
-	row := uas.db.QueryRow(fmt.Sprintf("UPDATE users SET password='%s' WHERE id=%d RETURNING *", hashedPassword, userID))
+	row := db.DB.QueryRow(fmt.Sprintf("UPDATE users SET password='%s' WHERE id=%d RETURNING *", hashedPassword, userID))
 
 	var user UserRes
 	err = row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)
@@ -55,8 +43,8 @@ func (uas *UserAuthorizedService) ChangePassword(userID int, password string) (*
 	return &user, nil
 }
 
-func (uas *UserAuthorizedService) ChangeEmail(userID int, email string) (*UserRes, error) {
-	row := uas.db.QueryRow(fmt.Sprintf("UPDATE users SET email='%s' WHERE id=%d RETURNING *", email, userID))
+func ChangeEmail(userID int, email string) (*UserRes, error) {
+	row := db.DB.QueryRow(fmt.Sprintf("UPDATE users SET email='%s' WHERE id=%d RETURNING *", email, userID))
 
 	var user UserRes
 	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)

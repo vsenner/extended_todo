@@ -1,7 +1,11 @@
 package main
 
-import "extended_todo/server"
+import (
+	db "extended_todo/routing"
+	"extended_todo/server"
+)
 
 func main() {
+	db.SetupDB()
 	server.Server()
 }
