@@ -2,136 +2,50 @@ package token_service
 
 import (
 	db "extended_todo/routing"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pkg/errors"
 	"time"
 )
 
-type UserRes struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
+func SaveToken(token string, userID int64) bool {
+	row := db.DB.QueryRow("INSERT INTO token (user_id, refresh_token) VALUES ($1, $2) RETURNING *", userID, token)
+
+	if row == nil {
+		return false
+	}
+
+	return true
+}
+
+type Claims struct {
 	Email string `json:"email"`
+	jwt.StandardClaims
 }
 
-func GenerateTokens(payload *UserRes) (string, string, error) {
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
-	refreshClaims["id"] = payload.ID
-	refreshClaims["name"] = payload.Name
-	refreshClaims["email"] = payload.Email
-	refreshClaims["exp"] = time.Now().Add(time.Hour * 24 * 30).Unix()
+func CreateToken(email string) (string, error) {
+	expirationTime := time.Now().Add(24 * time.Hour)
 
-	refreshTokenString, err := refreshToken.SignedString([]byte(payload.Name))
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to generate refresh token")
-	}
-
-	accessToken := jwt.New(jwt.SigningMethodHS256)
-	accessClaims := accessToken.Claims.(jwt.MapClaims)
-	accessClaims["id"] = payload.ID
-	accessClaims["name"] = payload.Name
-	accessClaims["email"] = payload.Email
-	accessClaims["exp"] = time.Now().Add(time.Minute * 30).Unix()
-
-	accessTokenString, err := accessToken.SignedString([]byte(payload.Name))
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to generate access token")
-	}
-
-	return accessTokenString, refreshTokenString, nil
-}
-
-func SaveToken(refreshToken string, userID int) error {
-	row := db.DB.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM token WHERE user_id = %d", userID))
-
-	var count int
-	err := row.Scan(&count)
-	if err != nil {
-		return errors.Wrap(err, "failed to check token existence")
-	}
-
-	if count == 1 {
-		_, err = db.DB.QueryRow(fmt.Sprintf("UPDATE token SET refresh_token = '%s' WHERE user_id = %d", refreshToken, userID))
-		if err != nil {
-			return errors.Wrap(err, "failed to update token")
-		}
-	} else {
-		_, err = db.DB.Exec(fmt.Sprintf("INSERT INTO token (refresh_token, user_id) VALUES ('%s', %d)", refreshToken, userID))
-		if err != nil {
-			return errors.Wrap(err, "failed to insert token")
-		}
-	}
-
-	return nil
-}
-
-func ValidateAccessToken(accessToken string) (*UserRes, error) {
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		return []byte(ts.accessTokenSecret), nil
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse access token")
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return nil, errors.New("invalid access token")
-	}
-
-	userID, ok := claims["id"].(float64)
-	if !ok {
-		return nil, errors.New("invalid user-unauthorized-authorized ID in access token")
-	}
-
-	name, ok := claims["name"].(string)
-	if !ok {
-		return nil, errors.New("invalid name in access token")
-	}
-
-	email, ok := claims["email"].(string)
-	if !ok {
-		return nil, errors.New("invalid email in access token")
-	}
-
-	return &UserRes{
-		ID:    int(userID),
-		Name:  name,
+	claims := &Claims{
 		Email: email,
-	}, nil
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("secret"))
+
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
 }
 
-func ValidateRefreshToken(refreshToken string) (*UserRes, error) {
-	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
-		return []byte(ts.refreshTokenSecret), nil
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse refresh token")
+func UpdateToken(token string, user_id int64) bool {
+	row := db.DB.QueryRow("UPDATE token SET refresh_token = $1 WHERE user_id = $2", token, user_id)
+	if row == nil {
+		return false
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return nil, errors.New("invalid refresh token")
-	}
-
-	userID, ok := claims["id"].(float64)
-	if !ok {
-		return nil, errors.New("invalid user-unauthorized-authorized ID in refresh token")
-	}
-
-	name, ok := claims["name"].(string)
-	if !ok {
-		return nil, errors.New("invalid name in refresh token")
-	}
-
-	email, ok := claims["email"].(string)
-	if !ok {
-		return nil, errors.New("invalid email in refresh token")
-	}
-
-	return &UserRes{
-		ID:    int(userID),
-		Name:  name,
-		Email: email,
-	}, nil
+	return true
 }

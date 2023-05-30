@@ -1,35 +1,32 @@
 package server
 
 import (
-	card_controller "extended_todo/controller/card"
+	"extended_todo/controller/test"
 	user_unauthorized_controller "extended_todo/controller/user-unauthorized"
+	token_service "extended_todo/service/token"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"net/http"
-	"time"
 )
 
 func Server() {
 	router := gin.Default()
 
-	router.POST("/login", login)
-
-	//userGroup := router.Group("/users")
-	//userGroup.Use(Authenticate)
+	//cardGroup := router.Group("/cards")
+	//cardGroup.Use(Authenticate)
 	//{
-	//	userGroup.GET("", user_controller.Registration)
-	//	userGroup.GET("/:id", user_controller.GetOneUser)
+	//	cardGroup.GET("", card_controller.GetAllCards)
+	//	cardGroup.GET("/:id", card_controller.GetOneCard)
 	//}
 
-	cardGroup := router.Group("/cards")
-	cardGroup.Use(Authenticate)
-	{
-		cardGroup.GET("", card_controller.GetAllCards)
-		cardGroup.GET("/:id", card_controller.GetOneCard)
-	}
-
 	router.POST("/user/registration", user_unauthorized_controller.Registration)
+	router.POST("/user/login", user_unauthorized_controller.Login)
+
+	authGroup := router.Group("/auth", Authenticate)
+
+	authGroup.GET("/test", test.Test)
 
 	//taskGroup := router.Group("/tasks")
 	//taskGroup.Use(Authenticate)
@@ -39,31 +36,6 @@ func Server() {
 	//}
 
 	router.Run("localhost:8080")
-}
-
-type Claims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
-
-func CreateToken(username string) (string, error) {
-	expirationTime := time.Now().Add(24 * time.Hour)
-
-	claims := &Claims{
-		Username: username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte("secret"))
-
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
 }
 
 func Authenticate(c *gin.Context) {
@@ -77,7 +49,9 @@ func Authenticate(c *gin.Context) {
 
 	tokenString = tokenString[7:]
 
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	fmt.Print("Token - " + tokenString + "\n")
+
+	token, err := jwt.ParseWithClaims(tokenString, &token_service.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte("secret"), nil
 	})
 
@@ -87,41 +61,13 @@ func Authenticate(c *gin.Context) {
 		return
 	}
 
-	claims, ok := token.Claims.(*Claims)
+	claims, ok := token.Claims.(*token_service.Claims)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		c.Abort()
 		return
 	}
 
-	c.Set("username", claims.Username)
+	c.Set("username", claims.Email)
 	c.Next()
-}
-
-type UserLogin struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-func login(c *gin.Context) {
-
-	var user UserLogin
-
-	if err := c.BindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
-		return
-	}
-
-	if user.Username != "admin" || user.Password != "admin" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	tokenString, err := CreateToken(user.Username)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
