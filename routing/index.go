@@ -15,8 +15,6 @@ func SetupDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer DB.Close()
-
 	err = DB.Ping()
 	if err != nil {
 		log.Fatal(err)

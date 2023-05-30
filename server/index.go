@@ -2,7 +2,7 @@ package server
 
 import (
 	card_controller "extended_todo/controller/card"
-	user_controller "extended_todo/controller/user-authorized"
+	user_unauthorized_controller "extended_todo/controller/user-unauthorized"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -15,12 +15,12 @@ func Server() {
 
 	router.POST("/login", login)
 
-	userGroup := router.Group("/users")
-	userGroup.Use(Authenticate)
-	{
-		userGroup.GET("", user_controller.Registration)
-		userGroup.GET("/:id", user_controller.GetOneUser)
-	}
+	//userGroup := router.Group("/users")
+	//userGroup.Use(Authenticate)
+	//{
+	//	userGroup.GET("", user_controller.Registration)
+	//	userGroup.GET("/:id", user_controller.GetOneUser)
+	//}
 
 	cardGroup := router.Group("/cards")
 	cardGroup.Use(Authenticate)
@@ -28,6 +28,8 @@ func Server() {
 		cardGroup.GET("", card_controller.GetAllCards)
 		cardGroup.GET("/:id", card_controller.GetOneCard)
 	}
+
+	router.POST("/user/registration", user_unauthorized_controller.Registration)
 
 	//taskGroup := router.Group("/tasks")
 	//taskGroup.Use(Authenticate)
