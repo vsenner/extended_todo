@@ -13,6 +13,11 @@ type CardBody struct {
 	Admin_ID int    `json:"admin_id"`
 }
 
+type Cart struct {
+	Name   string `json:"name"`
+	CardID int    `json:"card_id"`
+}
+
 func GetAllCards(c *gin.Context) {
 	adminIdStr := c.Query("adminID")
 	adminId, _ := strconv.Atoi(adminIdStr)

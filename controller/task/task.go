@@ -52,10 +52,7 @@ func GetOneTask(c *gin.Context) {
 func CreateTask(c *gin.Context) {
 	var newTask TaskBody
 
-	if err := c.BindJSON(&newTask); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"status": "Incorrect request"})
-		return
-	}
+	_ = c.BindJSON(&newTask)
 
 	task := task_service.Add(newTask.Card_ID, newTask.Title, newTask.Description, newTask.Start, newTask.Deadline, newTask.Percent)
 

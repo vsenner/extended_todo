@@ -7,20 +7,32 @@ import (
 	user_unauthorized_controller "extended_todo/controller/user-unauthorized"
 	token_service "extended_todo/service/token"
 	"fmt"
-	"net/http"
-
 	"github.com/dgrijalva/jwt-go"
-	//"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"log"
+	"net/http"
+	"os"
 )
+
+func goDotEnvVariable(key string) string {
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -34,6 +46,8 @@ func CORSMiddleware() gin.HandlerFunc {
 func Server() {
 	router := gin.Default()
 
+	port := goDotEnvVariable("PORT")
+
 	router.Use(CORSMiddleware())
 
 	router.POST("/user/registration", user_unauthorized_controller.Registration)
@@ -43,7 +57,7 @@ func Server() {
 
 	authGroup.GET("/test", test.Test)
 	authGroup.GET("/cards", card_controller.GetAllCards)
-	authGroup.GET("/card/:id", card_controller.GetOneCard)
+	authGroup.GET("/cards/:id", card_controller.GetOneCard)
 	authGroup.POST("/cards", card_controller.CreateCard)
 	authGroup.PATCH("/cards/rename/:id", card_controller.RenameCard)
 	authGroup.DELETE("/cards/remove/:id", card_controller.RemoveCard)
@@ -60,7 +74,7 @@ func Server() {
 	authGroup.PATCH("/tasks/change_title/:id", task_controller.ChangeTaskTitle)
 	authGroup.DELETE("/tasks/:id", task_controller.RemoveTask)
 
-	router.Run("localhost:8080")
+	router.Run("0.0.0.0:" + port)
 }
 
 func Authenticate(c *gin.Context) {
