@@ -13,19 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
-	"os"
 )
-
-func goDotEnvVariable(key string) string {
-
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
-}
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -46,7 +34,11 @@ func CORSMiddleware() gin.HandlerFunc {
 func Server() {
 	router := gin.Default()
 
-	port := goDotEnvVariable("PORT")
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
 	router.Use(CORSMiddleware())
 
@@ -74,7 +66,7 @@ func Server() {
 	authGroup.PATCH("/tasks/change_title/:id", task_controller.ChangeTaskTitle)
 	authGroup.DELETE("/tasks/:id", task_controller.RemoveTask)
 
-	router.Run("0.0.0.0:" + port)
+	router.Run()
 }
 
 func Authenticate(c *gin.Context) {
