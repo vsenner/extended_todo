@@ -8,7 +8,7 @@ import (
 var DB *sql.DB
 
 func SetupDB() {
-	dbConnStr := "postgres://postgres:postgres@localhost:5432/extended_todo?sslmode=disable"
+	dbConnStr := "postgresql://postgres:a86UXJwyCIMpjzSdlVvL@containers-us-west-93.railway.app:6097/railway"
 
 	var err error
 	DB, err = sql.Open("postgres", dbConnStr)

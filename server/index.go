@@ -13,7 +13,6 @@ import (
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
-	"os"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -41,7 +40,6 @@ func Server() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	port := os.Getenv("PORT")
 	router.Use(CORSMiddleware())
 
 	router.POST("/user/registration", user_unauthorized_controller.Registration)
@@ -68,7 +66,7 @@ func Server() {
 	authGroup.PATCH("/tasks/change_title/:id", task_controller.ChangeTaskTitle)
 	authGroup.DELETE("/tasks/:id", task_controller.RemoveTask)
 
-	router.Run("0.0.0.0" + ":" + port)
+	router.Run()
 }
 
 func Authenticate(c *gin.Context) {
