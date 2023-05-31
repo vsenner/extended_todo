@@ -24,10 +24,10 @@ func Server() {
 
 	authGroup.GET("/test", test.Test)
 	authGroup.GET("/cards", card_controller.GetAllCards)
-	authGroup.GET("/cards/:id", card_controller.GetOneCard)
+	authGroup.GET("/card/:id", card_controller.GetOneCard)
 	authGroup.POST("/cards", card_controller.CreateCard)
 	authGroup.PATCH("/cards/rename/:id", card_controller.RenameCard)
-	authGroup.DELETE("/cards/:id", card_controller.RemoveCard)
+	authGroup.DELETE("/cards/remove/:id", card_controller.RemoveCard)
 
 	authGroup.GET("/tasks", task_controller.GetAllTasks)
 	authGroup.GET("/tasks/:id", task_controller.GetOneTask)

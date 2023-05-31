@@ -85,7 +85,7 @@ func ChangeTitle(taskID int, title string) Task {
 
 	t := Task{}
 
-	if err := db.DB.QueryRow("UPDATE task SET title='$1' WHERE id=$2 RETURNING *", title, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
+	if err := db.DB.QueryRow("UPDATE task SET title=$1 WHERE id=$2 RETURNING *", title, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
 	return t
@@ -95,7 +95,7 @@ func ChangeDescription(taskID int, description string) Task {
 
 	t := Task{}
 
-	if err := db.DB.QueryRow("UPDATE task SET description='$1' WHERE id=$2 RETURNING *", description, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
+	if err := db.DB.QueryRow("UPDATE task SET description=$1 WHERE id=$2 RETURNING *", description, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
 	return t
@@ -105,7 +105,7 @@ func ChangeStart(taskID int, start string) Task {
 
 	t := Task{}
 
-	if err := db.DB.QueryRow("UPDATE task SET start='$1' WHERE id=$2 RETURNING *", start, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
+	if err := db.DB.QueryRow("UPDATE task SET start=$1 WHERE id=$2 RETURNING *", start, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
 	return t
@@ -115,7 +115,7 @@ func ChangeDeadline(taskID int, deadline string) Task {
 
 	t := Task{}
 
-	if err := db.DB.QueryRow("UPDATE task SET deadline='$1' WHERE id=$2 RETURNING *", deadline, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
+	if err := db.DB.QueryRow("UPDATE task SET deadline=$1 WHERE id=$2 RETURNING *", deadline, taskID).Scan(&t.ID, &t.CardID, &t.Title, &t.Description, &t.Start, &t.Percent, &t.Deadline, &t.Completed); err != nil {
 	}
 
 	return t
