@@ -17,13 +17,6 @@ import (
 func Server() {
 	router := gin.Default()
 
-	//cardGroup := router.Group("/cards")
-	//cardGroup.Use(Authenticate)
-	//{
-	//	cardGroup.GET("", card_controller.GetAllCards)
-	//	cardGroup.GET("/:id", card_controller.GetOneCard)
-	//}
-
 	router.POST("/user/registration", user_unauthorized_controller.Registration)
 	router.POST("/user/login", user_unauthorized_controller.Login)
 
@@ -32,13 +25,13 @@ func Server() {
 	authGroup.GET("/test", test.Test)
 	authGroup.GET("/cards", card_controller.GetAllCards)
 	authGroup.GET("/cards/:id", card_controller.GetOneCard)
-	authGroup.POST("/card", card_controller.CreateCard)
+	authGroup.POST("/cards", card_controller.CreateCard)
 	authGroup.PATCH("/cards/rename/:id", card_controller.RenameCard)
 	authGroup.DELETE("/cards/:id", card_controller.RemoveCard)
 
 	authGroup.GET("/tasks", task_controller.GetAllTasks)
 	authGroup.GET("/tasks/:id", task_controller.GetOneTask)
-	authGroup.POST("/task", task_controller.CreateTask)
+	authGroup.POST("/tasks", task_controller.CreateTask)
 	authGroup.PATCH("/tasks/change_card/:id", task_controller.ChangeTaskCard)
 	authGroup.PATCH("/tasks/change_completed/:id", task_controller.ChangeTaskCompleted)
 	authGroup.PATCH("/tasks/change_deadline/:id", task_controller.ChangeTaskDeadline)
@@ -47,13 +40,6 @@ func Server() {
 	authGroup.PATCH("/tasks/change_start/:id", task_controller.ChangeTaskStart)
 	authGroup.PATCH("/tasks/change_title/:id", task_controller.ChangeTaskTitle)
 	authGroup.DELETE("/tasks/:id", task_controller.RemoveTask)
-
-	//taskGroup := router.Group("/tasks")
-	//taskGroup.Use(Authenticate)
-	//{
-	//	taskGroup.GET("", task.getAllTasks)
-	//	taskGroup.GET("/:id", task.getOneTask)
-	//}
 
 	router.Run("localhost:8080")
 }

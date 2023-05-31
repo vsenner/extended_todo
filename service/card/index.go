@@ -15,16 +15,21 @@ type Card struct {
 }
 
 func GetAll(userID int) ([]Card, error) {
-	rows, err := db.DB.Query(fmt.Sprintf("SELECT * FROM card WHERE admin_id=%d", userID))
+
+	query := fmt.Sprintf("select * from card where admin_id=%d", userID)
+
+	rows, err := db.DB.Query(query)
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute query")
 	}
-	defer rows.Close()
 
 	var cards []Card
+
 	for rows.Next() {
 		var card Card
 		err := rows.Scan(&card.ID, &card.Name, &card.AdminID)
+
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
 		}
@@ -45,8 +50,6 @@ func GetOne(cardID int) Card {
 	if err := db.DB.QueryRow("SELECT * FROM card WHERE id=$1", cardID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
 
-	fmt.Print("GOOD")
-
 	return c
 }
 
@@ -54,10 +57,8 @@ func Add(userID int, name string) Card {
 
 	c := Card{}
 
-	if err := db.DB.QueryRow("INSERT INTO card (name, admin_id) VALUES ('$1', $2) RETURNING *", name, userID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
+	if err := db.DB.QueryRow("INSERT INTO card (name, admin_id) VALUES ($1, $2) RETURNING *", name, userID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
-
-	fmt.Print("GOOD")
 
 	return c
 }
@@ -84,10 +85,8 @@ func Rename(cardID int, name string) Card {
 
 	c := Card{}
 
-	if err := db.DB.QueryRow("UPDATE card SET name='$1' WHERE id=$2 RETURNING *", name, cardID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
+	if err := db.DB.QueryRow("UPDATE card SET name=$1 WHERE id=$2 RETURNING *", name, cardID).Scan(&c.ID, &c.Name, &c.AdminID); err != nil {
 	}
-
-	fmt.Print("GOOD")
 
 	return c
 }

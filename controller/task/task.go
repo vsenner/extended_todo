@@ -22,7 +22,8 @@ type TaskBody struct {
 }
 
 func GetAllTasks(c *gin.Context) {
-	cardIdStr := c.Param("cardID")
+	cardIdStr := c.Query("cardID")
+
 	cardId, _ := strconv.Atoi(cardIdStr)
 	tasks, err := task_service.GetAll(cardId)
 
@@ -40,7 +41,10 @@ func GetOneTask(c *gin.Context) {
 
 	task := task_service.GetOne(id)
 
-	fmt.Print(task)
+	if (task == task_service.Task{}) {
+		c.JSON(http.StatusOK, gin.H{"status": "not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"task": task})
 }
@@ -49,12 +53,11 @@ func CreateTask(c *gin.Context) {
 	var newTask TaskBody
 
 	if err := c.BindJSON(&newTask); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "Incorrect request"})
 		return
 	}
 
 	task := task_service.Add(newTask.Card_ID, newTask.Title, newTask.Description, newTask.Start, newTask.Deadline, newTask.Percent)
-
-	fmt.Print(task)
 
 	c.JSON(http.StatusOK, gin.H{"task": task})
 

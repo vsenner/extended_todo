@@ -3,10 +3,7 @@ package card_controller
 import (
 	card_service "extended_todo/service/card"
 	"fmt"
-
 	"github.com/gin-gonic/gin"
-
-	//"github.com/pkg/errors"
 	"net/http"
 	"strconv"
 )
@@ -17,8 +14,9 @@ type CardBody struct {
 }
 
 func GetAllCards(c *gin.Context) {
-	adminIdStr := c.Param("adminID")
+	adminIdStr := c.Query("adminID")
 	adminId, _ := strconv.Atoi(adminIdStr)
+
 	cards, err := card_service.GetAll(adminId)
 
 	if err != nil {
@@ -38,8 +36,6 @@ func CreateCard(c *gin.Context) {
 
 	card := card_service.Add(newCard.Admin_ID, newCard.Name)
 
-	fmt.Print(card)
-
 	c.JSON(http.StatusOK, gin.H{"card": card})
 
 }
@@ -50,7 +46,10 @@ func GetOneCard(c *gin.Context) {
 
 	card := card_service.GetOne(id)
 
-	fmt.Print(card)
+	if (card == card_service.Card{}) {
+		c.JSON(http.StatusOK, gin.H{"status": "not found"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"card": card})
 }
